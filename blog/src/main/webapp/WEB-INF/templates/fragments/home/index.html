@@ -13,8 +13,8 @@
 					<div class="card">
 					  <img class="card-img-top" th:src="@{/resources/uploads/post/__${post.image}__}" alt="Card image cap" width="286px" height="180px">
 					  <div class="card-body">
-					  	<h4 class="card-text" th:text="${post.title}">Title</h4>
-					    <p class="card-text" th:text="${post.des}">Content</p>
+					  	<h4 class="card-text" th:text="${post.title}">Tiêu đề</h4>
+					    <p class="card-text" th:text="${post.des}">Nội dung</p>
 					  </div>
 					  <div class="card-body">
 					  	<a th:href="@{like?postId=__${post.id}__&action=like}" class="card-link"><i class="far fa-thumbs-up"></i></a><strong th:text = "${post.likes}"></strong>
