@@ -1,6 +1,5 @@
 package com.blog.springmvc.controller;
 
-
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -43,43 +42,49 @@ public class HomeController extends Render {
 	private IService<Tag> tagService;
 	@Autowired
 	private IService<Comment> commentService;
-	
+
 	@GetMapping("/login")
 	public String viewLogin(Model model) {
 		SetPage(model, "Trang chủ - Đăng nhập", "fragments/home/login");
 		model.addAttribute("customer", new Customer());
 		return View();
 	}
+
 	@PostMapping("/login")
-	public String submitLogin(Model model , @ModelAttribute("customer") Customer customer) {
-		if( customerService.findByObject(customer) != null) {
-			model.addAttribute("setCustomer",customerService.findByObject(customer));
+	public String submitLogin(Model model, @ModelAttribute("customer") Customer customer) {
+		if (customerService.findByObject(customer) != null) {
+			model.addAttribute("setCustomer", customerService.findByObject(customer));
 			return viewIndex(model);
-		}else {
+		} else {
 			return "redirect:login";
-		}	
+		}
 	}
+
 	@GetMapping("/register")
 	public String viewRegister(Model model) {
 		SetPage(model, "Trang chủ - Đăng ký", "fragments/home/register");
 		model.addAttribute("customer", new Customer());
 		return View();
 	}
+
 	@PostMapping("/register")
-	public String submitRegister(@ModelAttribute("customer") Customer customer,@RequestParam("repassword") String repassword) {
-		if(repassword.equals(customer.getPassword()) ) {
+	public String submitRegister(@ModelAttribute("customer") Customer customer,
+			@RequestParam("repassword") String repassword) {
+		if (repassword.equals(customer.getPassword())) {
 			customerService.save(customer);
 			return "redirect:login";
-		}else {
+		} else {
 			return "redirect:register";
 		}
-		
+
 	}
+
 	@GetMapping("/")
 	public String viewIndex(Model model) {
-		
+
 		return viewIndexHome(model, 1, "id", "asc");
 	}
+
 	@GetMapping("/create")
 	public String viewCreatePost(Model model) {
 		SetPage(model, "Trang chủ - Đăng bài", "fragments/home/create");
@@ -87,8 +92,10 @@ public class HomeController extends Render {
 		model.addAttribute("post", new Post());
 		return View();
 	}
+
 	@GetMapping("/page")
-	public String viewIndexHome(Model model ,@RequestParam("num") int num, @RequestParam("field") String field, @RequestParam("dir") String dir) {
+	public String viewIndexHome(Model model, @RequestParam("num") int num, @RequestParam("field") String field,
+			@RequestParam("dir") String dir) {
 		SetPage(model, "Trang chủ", "fragments/home/index");
 		model.addAttribute("currentPage", num);
 		model.addAttribute("field", field);
@@ -99,14 +106,18 @@ public class HomeController extends Render {
 		model.addAttribute("tags", tagService.findAll());
 		return View();
 	}
+
 	@PostMapping("/create")
-	public String submitCreate( @ModelAttribute("post") Post post ,@SessionAttribute("setCustomer") Customer customer,@RequestParam("photo") MultipartFile photo) {
+	public String submitCreate(@ModelAttribute("post") Post post, @SessionAttribute("setCustomer") Customer customer,
+			@RequestParam("photo") MultipartFile photo) {
 		post.setAuth(customer);
 		String fileName = StringUtils.cleanPath(photo.getOriginalFilename());
 		post.setImage(fileName);
-		if(postService.save(post) == true) {
+		if (postService.save(post) == true) {
 			String uploadDir = context.getRealPath("resources/uploads/post"); // SERVER PATH
-			//String uploadDir = "C:\\Users\\Admin\\eclipse-workspace\\blog\\src\\main\\webapp\\resources\\uploads\\post"; // Local path
+			// String uploadDir =
+			// "C:\\Users\\Admin\\eclipse-workspace\\blog\\src\\main\\webapp\\resources\\uploads\\post";
+			// // Local path
 			try {
 				saveFile(uploadDir, fileName, photo);
 			} catch (IOException e) {
@@ -116,76 +127,79 @@ public class HomeController extends Render {
 		}
 		return "redirect:create";
 	}
+
 	@GetMapping("/comment")
 	public String viewComment(Model model, @RequestParam("postId") long id) {
 		SetPage(model, "Bình luận", "fragments/home/comment");
 		Post post = postService.findById(id);
 		post.setComments(commentService.findByAllObjectId(id));
-		model.addAttribute("post",post);
+		model.addAttribute("post", post);
 		model.addAttribute("comment", new Comment());
 		return View();
 	}
+
 	@PostMapping("/saveComment")
-	public String submitComment(@ModelAttribute("comment") Comment comment,@RequestParam("postId") long id, @SessionAttribute("setCustomer") Customer customer) {
-		if(customer != null) {
+	public String submitComment(@ModelAttribute("comment") Comment comment, @RequestParam("postId") long id,
+			@SessionAttribute("setCustomer") Customer customer) {
+		if (customer != null) {
 			comment.setCustomer(customer);
-			comment.setPost(postService.findById(id));	
+			comment.setPost(postService.findById(id));
 			commentService.save(comment);
 		}
-		return "redirect:comment?postId="+id;
+		return "redirect:comment?postId=" + id;
 	}
+
 	@SuppressWarnings("unchecked")
 	@GetMapping("/like")
-	public String likePost(Model model,@RequestParam("postId") long id , @RequestParam("action") String action, HttpServletRequest request ) {
+	public String likePost(Model model, @RequestParam("postId") long id, @RequestParam("action") String action,
+			HttpServletRequest request) {
 		Post post = postService.findById(id);
-		
-		HttpSession  session = request.getSession();
-		HashMap<Long,Post> posts = new HashMap<Long, Post>();
+
+		HttpSession session = request.getSession();
+		HashMap<Long, Post> posts = new HashMap<Long, Post>();
 		switch (action) {
 		case "like":
-			if(session.getAttribute("ILiking") == null) {
-				post.setLikes(post.getLikes()+1);
+			if (session.getAttribute("ILiking") == null) {
+				post.setLikes(post.getLikes() + 1);
 				posts.put(id, post);
-			}else {
+			} else {
 				posts = (HashMap<Long, Post>) session.getAttribute("ILiking");
-				if(posts.containsKey(id)) {
-					post.setLikes(post.getLikes()-1);
+				if (posts.containsKey(id)) {
+					post.setLikes(post.getLikes() - 1);
 					posts.remove(id);
-					if(posts.size() == 0) {
+					if (posts.size() == 0) {
 						posts = null;
 					}
-				}
-				else {
-					post.setLikes(post.getLikes()+1);
+				} else {
+					post.setLikes(post.getLikes() + 1);
 					posts.put(id, post);
 				}
 			}
 			postService.save(post);
 			break;
 		case "dislike":
-			if(session.getAttribute("ILiking") == null) {
-				post.setDislikes(post.getDislikes()+1);
+			if (session.getAttribute("ILiking") == null) {
+				post.setDislikes(post.getDislikes() + 1);
 				posts.put(id, post);
-			}else {
+			} else {
 				posts = (HashMap<Long, Post>) session.getAttribute("ILiking");
-				if(posts.containsKey(id)) {
-					post.setDislikes(post.getDislikes()-1);
+				if (posts.containsKey(id)) {
+					post.setDislikes(post.getDislikes() + 1);
 					posts.remove(id);
-					if(posts.size() == 0) {
+					if (posts.size() == 0) {
 						posts = null;
 					}
-				}
-				else {
-					post.setDislikes(post.getDislikes()+1);
+				} else {
+					post.setDislikes(post.getDislikes() + 1);
 					posts.put(id, post);
 				}
-				
+
 			}
 			postService.save(post);
 			break;
 		}
-		session.setAttribute("ILiking",posts);
-		
+		session.setAttribute("ILiking", posts);
+
 		return "redirect:/home/";
 	}
 }
